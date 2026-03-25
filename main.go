@@ -75,7 +75,10 @@ func handleAlert(w http.ResponseWriter, r *http.Request) {
 
 	w.Write([]byte("ok"))
 }
-
+func formatTime(t time.Time) string {
+	loc, _ := time.LoadLocation("Asia/Shanghai")
+	return t.In(loc).Format("2006-01-02 15:04:05")
+}
 func severityEmoji(sev string) string {
 	switch sev {
 	case "critical":
@@ -117,7 +120,7 @@ func buildCard(p AlertmanagerWebhook) map[string]interface{} {
 			strings.ToUpper(a.Status),
 			severity,
 			a.Labels["instance"],
-			a.StartsAt.Format("2006-01-02 15:04:05"),
+			formatTime(a.StartsAt),
 		)
 
 		// 标签整理
