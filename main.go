@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 )
@@ -22,7 +21,8 @@ type AlertmanagerWebhook struct {
 	} `json:"alerts"`
 }
 
-var feishuWebhook = os.Getenv("FEISHU_WEBHOOK")
+// var feishuWebhook = os.Getenv("FEISHU_WEBHOOK")
+var feishuWebhook = "https://open.feishu.cn/open-apis/bot/v2/hook/acfd55b4-de12-4557-aa90-1b6e7b3f359d"
 
 func main() {
 	http.HandleFunc("/alert", handleAlert)
@@ -98,10 +98,19 @@ func statusEmoji(status string) string {
 }
 
 func buildCard(p AlertmanagerWebhook) map[string]interface{} {
+	var titlePrefix string
+	var sevIcon string
+	isResolved := p.Status == "resolved"
+
 	headerColor := "blue"
 
-	if len(p.Alerts) > 0 {
+	if isResolved {
+		headerColor = "green"
+		titlePrefix = "✅ Prometheus 告警恢复"
+		sevIcon = "🟢"
+	} else if len(p.Alerts) > 0 {
 		headerColor = severityColor(p.Alerts[0].Labels["severity"])
+		titlePrefix = "🚨 Prometheus 告警"
 	}
 
 	var elements []map[string]interface{}
@@ -109,7 +118,9 @@ func buildCard(p AlertmanagerWebhook) map[string]interface{} {
 	for i, a := range p.Alerts {
 		severity := a.Labels["severity"]
 		statusIcon := statusEmoji(a.Status)
-		sevIcon := severityEmoji(severity)
+		if sevIcon != "🟢" {
+			sevIcon = severityEmoji(severity)
+		}
 
 		title := fmt.Sprintf("%s %s %s", statusIcon, sevIcon, a.Labels["alertname"])
 		summary := a.Annotations["summary"]
@@ -181,7 +192,7 @@ func buildCard(p AlertmanagerWebhook) map[string]interface{} {
 				"template": headerColor,
 				"title": map[string]string{
 					"tag":     "plain_text",
-					"content": fmt.Sprintf("🚨 Prometheus 告警（%d 条）", len(p.Alerts)),
+					"content": fmt.Sprintf("%s（%d 条）", titlePrefix, len(p.Alerts)),
 				},
 			},
 			"elements": elements,
