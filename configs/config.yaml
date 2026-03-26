@@ -1,0 +1,11 @@
+server:
+  port: 8080
+  mode: debug
+
+feishu:
+  webhook_url: "https://open.feishu.cn/open-apis/bot/v2/hook/acfd55b4-de12-4557-aa90-1b6e7b3f359d"
+  timeout: 10s
+
+log:
+  level: info
+  format: json

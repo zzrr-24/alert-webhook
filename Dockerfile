@@ -1,13 +1,18 @@
-FROM golang:1.22-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
-COPY main.go .
-RUN go mod init feishu-adapter && go mod tidy
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o app
+ENV GOPROXY=https://goproxy.cn,direct
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o alert-webhook ./cmd/webhook
 
 FROM alpine:3.19
 WORKDIR /root/
-COPY --from=builder /app/app .
+COPY --from=builder /app/alert-webhook .
+COPY --from=builder /app/configs/config.yaml ./configs/config.yaml
+
 EXPOSE 8080
 
-CMD ["./app"]
+CMD ["./alert-webhook"]
