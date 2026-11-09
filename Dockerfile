@@ -10,6 +10,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o alert-webhook ./cmd/webhoo
 
 FROM alpine:3.19
 WORKDIR /root/
+RUN apk add --no-cache tzdata
 COPY --from=builder /app/alert-webhook .
 COPY --from=builder /app/configs/config.yaml ./configs/config.yaml
 
